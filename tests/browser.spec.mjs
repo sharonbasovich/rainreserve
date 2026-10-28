@@ -38,10 +38,18 @@ for(const width of [360,390,768,1440])test(`layout and accessible controls at ${
  await page.setViewportSize({width,height:900});await page.goto('/');expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
  await page.getByRole('link',{name:'Try a water-balance scenario'}).click();await expect(page.locator('#workspace-title')).toBeInViewport();
  const results=await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa','wcag21aa']).analyze();expect(results.violations).toEqual([]);
+ await page.locator('#workspace-title').click();
  await page.screenshot({path:`test-results/layout-${width}.png`,fullPage:true});
 });
 test('keyboard skip link, disclosures and reduced motion',async({page})=>{
  await page.emulateMedia({reducedMotion:'reduce'});await page.goto('/');await page.keyboard.press('Tab');await expect(page.getByRole('link',{name:'Skip to explorer'})).toBeFocused();await page.keyboard.press('Enter');await expect(page.locator('#workspace-title')).toBeInViewport();
  await page.getByText('What this leaves out',{exact:true}).click();await expect(page.getByText('No soil moisture carried between days',{exact:false})).toBeVisible();
  expect(await page.locator('#water-fill').evaluate(e=>getComputedStyle(e).transitionDuration)).toBe('0s');
+});
+
+test('original rain-flow illustration responds to focus/hover and reduced-motion fallback',async({page})=>{
+ await page.goto('/');const story=page.locator('.flow-story');const drop=page.locator('.dot-one');
+ await story.focus();await expect(drop).toHaveCSS('animation-name','trace-drop');
+ await page.locator('#workspace-title').click();await story.hover();await expect(drop).toHaveCSS('animation-name','trace-drop');
+ await page.emulateMedia({reducedMotion:'reduce'});await expect(drop).toHaveCSS('animation-name','none');await expect(drop).toHaveCSS('opacity','1');
 });
