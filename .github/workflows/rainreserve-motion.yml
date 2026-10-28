@@ -1,0 +1,41 @@
+name: RainReserve original motion capture
+on:
+  push:
+    branches: ['film/rainreserve-motion']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: rainreserve-motion-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  capture:
+    name: Original editorial graphics only
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '24.22.1'
+      - name: Install exact locked tools and Chromium
+        run: |
+          npm ci --ignore-scripts --no-audit --no-fund
+          npm ci --prefix film/motion-deps --ignore-scripts --no-audit --no-fund
+          npx --no-install playwright install --with-deps chromium
+      - name: Validate syntax and record only original motion
+        run: |
+          node --check scripts/capture-motion.mjs
+          node --input-type=module -e "import fs from 'node:fs'; import vm from 'node:vm'; const html=fs.readFileSync('film/motion/index.html','utf8'); const scripts=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g)].map(m=>m[1]).filter(s=>s.trim()); if(scripts.length!==1) throw Error('Expected one inline motion script'); scripts.forEach(s=>new vm.Script(s));"
+          timeout 120s node scripts/capture-motion.mjs
+          find motion-capture -maxdepth 1 -type f ! -name SHA256SUMS.txt -print0 | sort -z | xargs -0 sha256sum > motion-capture/SHA256SUMS.txt
+      - name: Preserve footage, midpoint frames, source and license provenance
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: rainreserve-motion-${{ github.sha }}
+          path: motion-capture/
+          retention-days: 7
+          if-no-files-found: error
