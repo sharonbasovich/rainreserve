@@ -39,10 +39,12 @@ for(const width of [360,390,768,1440])test(`layout and accessible controls at ${
  await page.getByRole('link',{name:'Try a water-balance scenario'}).click();await expect(page.locator('#workspace-title')).toBeInViewport();
  const results=await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa','wcag21aa']).analyze();expect(results.violations).toEqual([]);
  await page.locator('#workspace-title').click();
+ await expect(page.locator('.skip')).not.toBeFocused();
+ await expect(page.locator('.skip')).toHaveCSS('clip-path','inset(50%)');
  await page.screenshot({path:`test-results/layout-${width}.png`,fullPage:true});
 });
 test('keyboard skip link, disclosures and reduced motion',async({page})=>{
- await page.emulateMedia({reducedMotion:'reduce'});await page.goto('/');await page.keyboard.press('Tab');await expect(page.getByRole('link',{name:'Skip to explorer'})).toBeFocused();await page.keyboard.press('Enter');await expect(page.locator('#workspace-title')).toBeInViewport();
+ await page.emulateMedia({reducedMotion:'reduce'});await page.goto('/');await page.keyboard.press('Tab');await expect(page.getByRole('link',{name:'Skip to explorer'})).toBeFocused();await expect(page.locator('.skip')).toHaveCSS('clip-path','none');await page.keyboard.press('Enter');await expect(page.locator('#workspace-title')).toBeInViewport();
  await page.getByText('What this leaves out',{exact:true}).click();await expect(page.getByText('No soil moisture carried between days',{exact:false})).toBeVisible();
  expect(await page.locator('#water-fill').evaluate(e=>getComputedStyle(e).transitionDuration)).toBe('0s');
 });
