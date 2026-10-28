@@ -52,3 +52,22 @@ No third-party assets, copied components, fonts, runtime libraries, weather serv
 ## Verification
 
 `npm test` runs 14 domain tests, including 2,000 seeded scenarios against a separately implemented reference, conservation, boundary cases, rejection, and nonmutation. Syntax and static build checks are separate. Browser verification status and limitations are in `VERIFICATION.md`—do not infer browser success from model tests.
+
+## Public deployment
+
+The static app is compatible with a project directory such as `/rainreserve/`: its stylesheet, ES module entry, and model import are relative. The four runtime files and all visual/model behavior are unchanged by the deployment workflow.
+
+`.github/workflows/verify.yml` verifies every push and pull request, including all browser flows under `/rainreserve/`. Only verified `main` builds can publish to GitHub Pages. The artifact contains the four built app files, `.nojekyll`, and a `deployment.json` recording the source commit. Deployment uses GitHub's temporary workflow token and OIDC; no custom credentials or paid service is required. The workflow does **not** enable Pages or change repository access. An owner must first select **GitHub Actions** as the Pages publishing source in repository settings. Keep the deployment PR in draft until independent review and merge readiness are coordinated.
+
+After deployment, the workflow runs the same Chromium suite against the returned public URL in a fresh unauthenticated context. It verifies model/UI flows, CSV download, keyboard navigation, reduced motion, mobile layouts, axe checks, runtime/console/network failures, exact runtime asset bytes, and source commit provenance. Browser screenshots, traces on failure, and HTML reports are retained for 14 days. A green build alone does not prove publication; inspect the deploy and production-browser jobs and the live URL before using it in a submission.
+
+To reproduce in a POSIX shell after `npm ci`, `npm run build`, and installing Playwright Chromium:
+
+```sh
+STATIC_PREFIX=/rainreserve/ npm run test:browser
+BASE_URL=https://sharonbasovich.github.io/rainreserve/ EXPECTED_COMMIT=<deployed-full-sha> npm run test:browser
+```
+
+In PowerShell, set `$env:STATIC_PREFIX='/rainreserve/'` before `npm run test:browser`; remove it with `Remove-Item Env:STATIC_PREFIX`. Set `BASE_URL` and `EXPECTED_COMMIT` similarly for the public run. `BASE_URL` must include the trailing slash and disables the local test server. Build from the expected commit with Git line-ending conversion disabled, matching Linux CI, so the exact asset-byte comparison is meaningful. The expected Pages URL above is a deployment target, not evidence that it is already live.
+
+Pages does not run `server.mjs` or inherit its local HTTP headers. The public app remains a static browser-local explorer without accounts, persistence, a weather API, or backend. A different static host can serve the same `dist` artifact if Pages later limits the project. No hackathon submission is performed by this workflow.
