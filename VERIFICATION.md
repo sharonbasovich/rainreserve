@@ -2,16 +2,17 @@
 
 ## Passing evidence
 
-Candidate commit `a6bd18c8bc6b1d6e6775ee8cb9f93f791c137d67` passed [GitHub Actions run 40687554289](https://github.com/sharonbasovich/rainreserve/actions/runs/40687554289), job 122813709037, on Ubuntu with Node 24.21 and Playwright Chromium 156.0.8078.4.
+Candidate commit `813b3047009edb3de1cd4ad18e170273a167166c` passed [GitHub Actions run 40688776436](https://github.com/sharonbasovich/rainreserve/actions/runs/40688776436), job 122817910767, on Ubuntu with Node 24.21 and Playwright Chromium 156.0.8078.4.
 
 - 14 model tests, including 2,000 seeded independent-oracle scenarios.
 - Four independently authored review tests, including 32,768 enumerated models, DOM state checks and full 60-row CSV conservation.
 - JavaScript syntax checks and static build.
-- Nine actual Chromium tests: live model comparisons, day/chart inspection, keyboard capacity change, pending/invalid input preservation, reset/reload, four rainfall patterns, zero capacity/rain/garden, real download with exact applied assumptions and raw conservation, no external runtime requests during the tested flow, 360/390/768/1440 px overflow and axe checks, keyboard skip navigation, disclosures, reduced motion.
+- Ten actual Chromium tests: live model comparisons, day/chart inspection, keyboard capacity change, pending/invalid input preservation, reset/reload, four rainfall patterns, zero capacity/rain/garden, real download with exact applied assumptions and raw conservation, no external runtime requests during the tested flow, 360/390/768/1440 px overflow and axe checks, keyboard skip navigation, disclosures, reduced motion, original illustration hover/focus tracing and static fallback.
 
 Independent model/UI review found no blocker, high or medium issues. Server, dependency-license, secret-pattern and CI publication audits passed. Runtime has no third-party dependency or external asset. Test dependencies remain development-only.
 
-Browser evidence ZIP SHA256: `0fd3a933957a007880ac8631bc816573f722d76fbcaa01dbf7fdc8494aca2399`; artifact 12816195555. Artifact retention is 14 days. Desktop/mobile screenshots were visually inspected. Minor heading whitespace and crowded-label refinements are included after that run. An original rain-flow illustration adds a meaningful hover/focus trace and static reduced-motion fallback, without changing model inputs or outputs. Screenshot capture now clears axe's temporary focus to avoid a visible skip-link overlay. The expanded ten-test CI rerun must be verified before merge.
+Browser evidence ZIP SHA256: `266d97f112c4290dd1fb29556839f366f55ef565d9407176ff85a6b27ddda9b5`; artifact 12815504170. Artifact retention is 14 days. Desktop/mobile screenshots were visually inspected. Heading whitespace and crowded-label refinements, an original rain-flow illustration, and the robust skip-link clipping were rechecked in this final run. Normal screenshot state explicitly asserts the skip link is not focused and clipped; the separate keyboard test asserts focus restores its visibility. Independent review approved these changes. The subsequent verification-note update does not change runtime source.
+
 
 ## Reproduce
 
