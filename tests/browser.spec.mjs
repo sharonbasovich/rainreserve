@@ -89,6 +89,6 @@ test('366 local daily values remain usable on mobile and reduced motion',async({
  await page.setViewportSize({width:360,height:900});await page.emulateMedia({reducedMotion:'reduce'});await page.goto('./');await page.getByText('Use your own rainfall',{exact:true}).click();
  const rows=Array.from({length:366},(_,i)=>`${new Date(Date.UTC(2024,0,1)+i*86400000).toISOString().slice(0,10)},${i%7?0:12}`);
  await page.locator('#rain-file').setInputFiles({name:'year.csv',mimeType:'text/csv',buffer:Buffer.from('date,rain_mm\n'+rows.join('\n'))});await expect(page.locator('.day-bar')).toHaveCount(366);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
- await page.locator('#day').focus();await page.keyboard.press('End');await expect(page.locator('#day-output')).toHaveText('366 / 366');await expect(page.locator('#rain-label')).toContainText('2024-12-31');
+ await page.locator('#day').focus();await page.keyboard.press('End');await expect(page.locator('#day-output')).toHaveText('366 / 366');await expect(page.locator('#rain-label')).toContainText('2024-12-31');expect(await page.locator('.chart-scroll').evaluate(e=>e.scrollLeft)).toBeGreaterThan(0);
  const results=await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa','wcag21aa']).analyze();expect(results.violations).toEqual([]);await page.screenshot({path:'test-results/import-mobile.png',fullPage:true});
 });
