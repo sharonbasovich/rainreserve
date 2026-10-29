@@ -7,12 +7,12 @@ const fmt=n=>new Intl.NumberFormat('en',{maximumFractionDigits:1}).format(n);
 let current, imported;
 let importVersion=0;
 function read(){return {roofM2:$('roofM2').valueAsNumber,gardenM2:$('gardenM2').valueAsNumber,demandMm:$('demandMm').valueAsNumber,efficiency:$('efficiency').valueAsNumber/100,capacityL:$('capacityL').valueAsNumber,initialL:0};}
-function update(){
+function update(resetDay=false){
  if(!$('controls').checkValidity()){ $('input-status').textContent='Enter valid values within the displayed limits. Results still show the last valid comparison.'; $('export').disabled=true; return; }
  try{
  const params=read(),custom=$('pattern').value==='custom',rain=custom?imported.rainfall:patterns[$('pattern').value];const scenario=simulate(params,rain);const baseParams={...params,capacityL:$('baselineL').valueAsNumber};const baseline=simulate(baseParams,rain);
  current={params,baseParams,scenario,baseline,rain,pattern:$('pattern').value,dates:custom?imported.dates:null};
- $('day').max=rain.length;$('day').value=Math.min($('day').valueAsNumber,rain.length);
+ $('day').max=rain.length;$('day').value=resetDay?1:Math.min($('day').valueAsNumber,rain.length);
  $('data-tag').textContent=`${custom?'YOUR CSV · UNVERIFIED':'SYNTHETIC DATA'} · ${rain.length} DAYS`;
  $('rain-source').textContent=custom?'Your supplied daily rainfall, not independently verified. Results are hypothetical; all scenarios begin with an empty barrel.':'Invented daily rainfall, not local observations. All scenarios begin with an empty barrel.';
  $('period-label').textContent=custom?`Your CSV · ${current.dates[0]} to ${current.dates.at(-1)} · ${rain.length} days · unverified input`:`Synthetic example · ${rain.length} days`;
@@ -44,8 +44,8 @@ $('rain-file').addEventListener('change',async()=>{
  try{
   if(file.size>MAX_CSV_BYTES)throw new Error('Choose a UTF-8 CSV no larger than 64 KiB.');
   const parsed=parseRainfallCSV(await file.text());if(version!==importVersion)return;
-  imported=parsed;$('custom-option').hidden=false;$('custom-option').disabled=false;$('pattern').value='custom';$('day').value=1;
-  $('csv-status').textContent=`Loaded ${parsed.rainfall.length} daily values locally. Check the dates and source; inputs are unverified.`;update();
+  imported=parsed;$('custom-option').hidden=false;$('custom-option').disabled=false;$('pattern').value='custom';
+  $('csv-status').textContent=`Loaded ${parsed.rainfall.length} daily values locally. Check the dates and source; inputs are unverified.`;update(true);
  }catch(error){if(version!==importVersion)return;$('csv-status').textContent=`Not imported: ${error.message} Your previous rainfall is unchanged.`;$('csv-status').dataset.error='true';}
  finally{if(version===importVersion)$('rain-file').value='';}
 });
