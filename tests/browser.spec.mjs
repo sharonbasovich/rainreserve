@@ -92,3 +92,21 @@ test('366 local daily values remain usable on mobile and reduced motion',async({
  await page.locator('#day').focus();await page.keyboard.press('End');await expect(page.locator('#day-output')).toHaveText('366 / 366');await expect(page.locator('#rain-label')).toContainText('2024-12-31');expect(await page.locator('.chart-scroll').evaluate(e=>e.scrollLeft)).toBeGreaterThan(0);
  const results=await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa','wcag21aa']).analyze();expect(results.violations).toEqual([]);await page.screenshot({path:'test-results/import-mobile.png',fullPage:true});
 });
+
+test('invalid setup keeps day selection synchronized while a rainfall replacement waits',async({page})=>{
+ const errors=[];page.on('pageerror',e=>errors.push(String(e)));
+ await page.goto('./');await page.getByText('Use your own rainfall',{exact:true}).click();
+ const file=buffer=>({name:'replacement.csv',mimeType:'text/csv',buffer:Buffer.from(buffer)});
+ const original='date,rain_mm\n2026-10-01,8\n2026-10-02,0';
+ await page.locator('#rain-file').setInputFiles(file(original));await expect(page.locator('.day-bar')).toHaveCount(2);
+ await page.locator('.day-bar').nth(1).click();await expect(page.locator('#day-output')).toHaveText('2 / 2');
+ await page.locator('#roofM2').fill('-1');
+ await page.locator('#rain-file').setInputFiles(file('date,rain_mm\n2026-11-01,20'));
+ await expect(page.locator('#csv-status')).toContainText('Loaded 1 daily values');await expect(page.locator('#export')).toBeDisabled();
+ await expect(page.locator('#day')).toHaveValue('2');await expect(page.locator('#day-output')).toHaveText('2 / 2');await expect(page.locator('#rain-label')).toHaveText('2026-10-02 · 0 mm rain');await expect(page.locator('.day-bar').nth(1)).toHaveAttribute('aria-pressed','true');
+ await page.locator('#roofM2').fill('40');await page.getByRole('button',{name:'Update comparison'}).click();
+ await expect(page.locator('#day')).toHaveValue('1');await expect(page.locator('#day-output')).toHaveText('1 / 1');await expect(page.locator('#rain-label')).toHaveText('2026-11-01 · 20 mm rain');await expect(page.locator('#export')).toBeEnabled();
+ const event=page.waitForEvent('download');await page.locator('#export').click();const download=await event;const csv=await readFile(await download.path(),'utf8');expect(csv).toContain('"Period start","2026-11-01"');expect(csv).not.toContain('2026-10-02');
+ await page.locator('#rain-file').setInputFiles(file(original));await expect(page.locator('.day-bar')).toHaveCount(2);await page.locator('.day-bar').nth(1).click();await page.locator('#rain-file').setInputFiles(file(original));
+ await expect(page.locator('#day')).toHaveValue('1');await expect(page.locator('#day-output')).toHaveText('1 / 2');await expect(page.locator('.day-bar').nth(0)).toHaveAttribute('aria-pressed','true');expect(errors).toEqual([]);
+});
