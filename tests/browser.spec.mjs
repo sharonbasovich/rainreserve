@@ -77,13 +77,13 @@ test('local rainfall replaces demos, preserves dates/provenance in export and re
  await page.locator('#day').focus();await page.keyboard.press('End');await expect(page.locator('#rain-label')).toContainText('2024-03-01');
  const downloaded=page.waitForEvent('download');await page.locator('#export').click();const download=await downloaded;const csv=await readFile(await download.path(),'utf8');expect(download.suggestedFilename()).toBe('rainreserve-user-rainfall-comparison.csv');expect(csv).toContain('user-provided rainfall, unverified');expect(csv).toContain('"date"');expect(csv).toContain('"2024-02-29"');expect(csv.split('\r\n').filter(l=>/^"(baseline|scenario)","\d+"/.test(l))).toHaveLength(6);
  await page.locator('#pattern').selectOption('mixed');await expect(page.locator('.day-bar')).toHaveCount(30);await page.locator('#pattern').selectOption('custom');await expect(page.locator('.day-bar')).toHaveCount(3);
- await page.locator('#reset').click();await expect(page.locator('#pattern')).toHaveValue('mixed');await expect(page.locator('#custom-option')).toBeDisabled();await expect(page.locator('#data-tag')).toHaveText('SYNTHETIC DATA · 30 DAYS');expect(external).toEqual([]);
+ await page.locator('#reset').click();await expect(page.locator('#pattern')).toHaveValue('mixed');await expect(page.locator('#custom-option')).toHaveJSProperty('disabled',true);await expect(page.locator('#data-tag')).toHaveText('SYNTHETIC DATA · 30 DAYS');expect(external).toEqual([]);
 });
 test('invalid, oversize and repeated imports retain previous valid comparison and recover',async({page})=>{
  await page.goto('./');await page.getByText('Use your own rainfall',{exact:true}).click();const before=await page.locator('#used-total').textContent();
  for(const content of ['date,inches\n2026-01-01,2','date,rain_mm\n2026-02-30,2','date,rain_mm\n2026-01-01,2\n2026-01-03,0','x'.repeat(65537)]){await page.locator('#rain-file').setInputFiles({name:'test.csv',mimeType:'text/csv',buffer:Buffer.from(content)});await expect(page.locator('#csv-status')).toContainText('Not imported:');await expect(page.locator('#used-total')).toHaveText(before);await expect(page.locator('#export')).toBeEnabled();}
  for(let i=0;i<2;i++){await page.locator('#rain-file').setInputFiles({name:'same.csv',mimeType:'text/csv',buffer:Buffer.from('date,rain_mm\n2026-01-01,0')});await expect(page.locator('#csv-status')).toContainText('Loaded 1 daily values');await expect(page.locator('#used-total')).toHaveText('0');await expect(page.locator('#rain-file')).toHaveValue('');}
- await page.reload();await expect(page.locator('#pattern')).toHaveValue('mixed');await expect(page.locator('#custom-option')).toBeDisabled();
+ await page.reload();await expect(page.locator('#pattern')).toHaveValue('mixed');await expect(page.locator('#custom-option')).toHaveJSProperty('disabled',true);
 });
 test('366 local daily values remain usable on mobile and reduced motion',async({page})=>{
  await page.setViewportSize({width:360,height:900});await page.emulateMedia({reducedMotion:'reduce'});await page.goto('./');await page.getByText('Use your own rainfall',{exact:true}).click();
