@@ -35,3 +35,9 @@ Model tests and build require no npm dependencies. Review/browser tests require 
 Passing automated axe checks is not accessibility certification. No physical touch devices, screen readers, Firefox or Safari tested. No measured water savings, real weather validation, garden experiment, or user study. No installation/safety/legal assurance. Synthetic fixtures only.
 
 Supported managed preview in the authoring container timed out and reported stopped; no raw local-browser workaround was used. Actual browser verification instead ran in the independently reviewed public GitHub CI workflow with read-only repository permissions. Final contest registration/submission was not performed.
+
+## 2026-10-29: local rainfall CSV improvement
+
+Independent source review and new regression tests cover strict ISO date/mm parsing, gaps/duplicates/limits, no mutation or upload, export provenance, actual jsdom import/update/reset, invalid settings, rejected-file recovery, and asynchronous reset/new-file/pattern cancellation. Model is byte-identical to the original. Local aggregate checks: 18 model/parser tests + 8 review/UI tests pass; syntax/build pass. Existing film is unchanged and predates this feature.
+
+Real-browser suite expanded from 11 to 14 tests: real file input/import/export, invalid/oversize/repeated files and reset/refresh, 366-day mobile layout with axe/reduced motion, plus all original behavior and exact five runtime-byte checks. Local browser execution is blocked by the executor (bundled Playwright Chromium absent; system Chromium fails `socket() Operation not permitted` before page execution). Use exact-commit GitHub Actions and its public-host browser job as the browser/deployment gate; do not infer success from local unit tests.

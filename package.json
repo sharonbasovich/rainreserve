@@ -4,10 +4,10 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test model.test.mjs",
+    "test": "node --test model.test.mjs rainfall.test.mjs",
     "build": "node build.mjs",
-    "check": "node --check app.mjs && node --check model.mjs && node --check server.mjs",
-    "test:review": "node --test review.test.mjs",
+    "check": "node --check app.mjs && node --check model.mjs && node --check rainfall.mjs && node --check server.mjs",
+    "test:review": "node --test review.test.mjs csv-independent.test.mjs",
     "test:browser": "playwright test"
   },
   "devDependencies": {

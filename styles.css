@@ -4,3 +4,6 @@
 /* Clip offscreen skip navigation as well as positioning it: full-page captures
    and translated viewports must not paint the unfocused link over content. */
 .skip{clip-path:inset(50%)}.skip:focus{clip-path:none}
+
+/* Local rainfall input stays secondary to the original demo. */
+.rain-import{margin:18px 0;border-top:1px solid var(--line);padding:12px 0}.rain-import summary{font-size:13px}.rain-import p{font-size:12px}.rain-import code{font-size:12px;overflow-wrap:anywhere}.rain-import input[type=file]{display:block;width:100%;max-width:100%;font-size:11px;margin:10px 0;color:var(--muted)}.rain-import input::file-selector-button{border:1px solid var(--line);border-radius:3px;background:#fafbf4;color:var(--green);padding:10px;margin-right:6px}.rain-import .plain{display:block;margin-bottom:12px}.rain-import [data-error=true]{color:#963e1e}.chart-scroll{overflow-x:auto;padding:4px 3px 16px;margin-inline:-3px}.chart{grid-template-columns:repeat(var(--days,30),minmax(5px,1fr));min-width:var(--chart-width,0)}.chart-axis{margin-top:2px}#period-label{overflow-wrap:anywhere}.tag{white-space:normal;text-align:center;max-width:100%}.controls{min-width:0}
