@@ -67,7 +67,7 @@ test('comparison distinguishes signed sub-precision deltas, rounded boundaries a
   const rounded=new Intl.NumberFormat('en',{maximumFractionDigits:1}).format(Math.abs(delta));
   if(delta===0){assert.equal(t.el('comparison').textContent,'Same modeled use as baseline.');assert.match(t.el('takeaway').textContent,/same modeled amount/);}
   else if(rounded==='0'){assert.equal(t.el('comparison').textContent,'Less than 0.1 L difference in modeled use.');assert.match(t.el('takeaway').textContent,/differ by less than 0.1 L/);assert.doesNotMatch(t.el('takeaway').textContent,/supplies 0 L|same modeled amount/);}
-  else{assert.equal(t.el('comparison').textContent,`${rounded} L ${delta>0?'more':'less'} modeled use than baseline.`);assert.match(t.el('takeaway').textContent,new RegExp(`${rounded} L ${delta>0?'more':'less'}`));}
+  else{assert.equal(t.el('comparison').textContent,`${rounded} L ${delta>0?'more':'less'} modeled use than baseline.`);assert.ok(t.el('takeaway').textContent.includes(`${rounded} L ${delta>0?'more':'less'}`));}
  }
  }finally{t.dom.window.close();}
 });

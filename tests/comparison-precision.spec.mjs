@@ -6,6 +6,8 @@ for(const width of [1440,360])test(`small modeled differences remain honest at $
  await page.setViewportSize({width,height:900});await page.goto('./');await page.getByText('Use your own rainfall',{exact:true}).click();
  for(const delta of [.04,.049,.051]){
   await page.locator('#rain-file').setInputFiles({name:'synthetic-precision.csv',mimeType:'text/csv',buffer:fixture(delta)});
+  await expect(page.locator('#rain-file')).toHaveValue('');
+  await expect(page.locator('#csv-status')).toHaveAttribute('data-error','false');
   await expect(page.locator('.day-bar')).toHaveCount(5);
   const small=delta<.05;
   await expect(page.locator('#comparison')).toHaveText(small?'Less than 0.1 L difference in modeled use.':'0.1 L more modeled use than baseline.');
