@@ -57,3 +57,17 @@ test('CSV exports 60 daily rows with applied assumptions and raw conservation',a
  for(const line of daily){const v=line.slice(1,-1).split('\",\"');const [start,collected,overflow,target,used,unmet,end]=v.slice(3).map(Number);assert.ok(Math.abs(start+collected-overflow-used-end)<1e-8);assert.ok(Math.abs(target-used-unmet)<1e-8);}
  }finally{t.dom.window.close();}
 });
+
+test('comparison distinguishes signed sub-precision deltas, rounded boundaries and exact zero',()=>{
+ const t=ui();try{
+ // Stub only the totals consumed by presentation; real-model/browser fixtures cover integration.
+ for(const delta of [0,-0,0.000001,-0.000001,0.04,-0.04,0.049,-0.049,0.05,-0.05,0.051,-0.051,1,-1]){
+  t.w.simulate=(params,rain)=>{const r=simulate(params,rain);r.totals.used=params.capacityL===400?delta:0;return r;};
+  t.fire('controls','submit');
+  const rounded=new Intl.NumberFormat('en',{maximumFractionDigits:1}).format(Math.abs(delta));
+  if(delta===0){assert.equal(t.el('comparison').textContent,'Same modeled use as baseline.');assert.match(t.el('takeaway').textContent,/same modeled amount/);}
+  else if(rounded==='0'){assert.equal(t.el('comparison').textContent,'Less than 0.1 L difference in modeled use.');assert.match(t.el('takeaway').textContent,/differ by less than 0.1 L/);assert.doesNotMatch(t.el('takeaway').textContent,/supplies 0 L|same modeled amount/);}
+  else{assert.equal(t.el('comparison').textContent,`${rounded} L ${delta>0?'more':'less'} modeled use than baseline.`);assert.match(t.el('takeaway').textContent,new RegExp(`${rounded} L ${delta>0?'more':'less'}`));}
+ }
+ }finally{t.dom.window.close();}
+});
