@@ -110,3 +110,25 @@ test('invalid setup keeps day selection synchronized while a rainfall replacemen
  await page.locator('#rain-file').setInputFiles(file(original));await expect(page.locator('.day-bar')).toHaveCount(2);await page.locator('.day-bar').nth(1).click();await page.locator('#rain-file').setInputFiles(file(original));
  await expect(page.locator('#day')).toHaveValue('1');await expect(page.locator('#day-output')).toHaveText('1 / 2');await expect(page.locator('.day-bar').nth(0)).toHaveAttribute('aria-pressed','true');expect(errors).toEqual([]);
 });
+
+for(const width of [1440,390])test(`pending assumptions survive immediate actions at ${width}px`,async({page})=>{
+ await page.setViewportSize({width,height:900});await page.goto('./');
+ const before=await page.locator('#balance').textContent();
+ await page.locator('#roofM2').fill('80');
+ await page.locator('#capacityL').focus();await page.keyboard.press('End');
+ await expect(page.locator('#roofM2')).toHaveValue('80');await expect(page.locator('#capacityL')).toHaveValue('2000');
+ await expect(page.locator('#capacity-label')).toHaveText('2,000 L (pending)');await expect(page.locator('#scenario-title')).toHaveText('Scenario · 400 L');await expect(page.locator('#balance')).toHaveText(before);await expect(page.locator('#export')).toBeDisabled();
+ await page.locator('#pattern').selectOption('none');await expect(page.locator('#balance')).toHaveText(before);await expect(page.locator('#export')).toBeDisabled();
+ await page.getByText('Use your own rainfall',{exact:true}).click();
+ await page.locator('#rain-file').setInputFiles({name:'pending.csv',mimeType:'text/csv',buffer:Buffer.from('date,rain_mm\n2026-10-01,8\n2026-10-02,0')});
+ await expect(page.locator('#csv-status')).toContainText('Loaded 2 daily values');await expect(page.locator('#balance')).toHaveText(before);await expect(page.locator('.day-bar')).toHaveCount(30);
+ await expect(page.locator('#input-status')).toContainText('Update comparison to apply');await expect(page.locator('#export')).toBeDisabled();
+ await page.locator('#input-status').scrollIntoViewIfNeeded();await page.screenshot({path:`test-results/pending-assumptions-${width}.png`,fullPage:true});
+ await page.getByRole('button',{name:'Update comparison'}).click();
+ await expect(page.locator('.day-bar')).toHaveCount(2);await expect(page.locator('#capacity-label')).toHaveText('2,000 L');await expect(page.locator('#export')).toBeEnabled();
+ const e=page.waitForEvent('download');await page.locator('#export').click();const csv=await readFile(await (await e).path(),'utf8');
+ expect(csv).toContain('"roof_m2","80"');expect(csv).toContain('"scenario_capacity_l","2000"');expect(csv).toContain('"Pattern","custom"');
+ await page.locator('#roofM2').fill('1001');await page.locator('#capacityL').focus();await page.keyboard.press('Home');await expect(page.locator('#export')).toBeDisabled();
+ await page.locator('#reset').click();await page.locator('#capacityL').focus();await page.keyboard.press('End');await expect(page.locator('#capacity-label')).toHaveText('2,000 L');await expect(page.locator('#export')).toBeEnabled();
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+});

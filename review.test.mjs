@@ -71,3 +71,21 @@ test('comparison distinguishes signed sub-precision deltas, rounded boundaries a
  }
  }finally{t.dom.window.close();}
 });
+
+test('immediate controls do not silently commit pending assumptions',()=>{
+ const t=ui();try{
+ const original=t.el('balance').textContent;
+ t.el('roofM2').value='80';t.fire('roofM2','input');
+ t.el('capacityL').value='800';t.fire('capacityL','input');
+ assert.equal(t.el('capacity-label').textContent,'800 L (pending)');assert.equal(t.el('scenario-title').textContent,'Scenario · 400 L');assert.equal(t.el('balance').textContent,original);assert.equal(t.el('export').disabled,true);
+ assert.match(t.el('input-status').textContent,/Update comparison to apply/);
+ t.el('pattern').value='none';t.fire('pattern','input');t.fire('pattern','change');
+ assert.equal(t.el('capacity-label').textContent,'800 L (pending)');assert.equal(t.el('scenario-title').textContent,'Scenario · 400 L');assert.equal(t.el('balance').textContent,original);assert.equal(t.el('export').disabled,true);
+ t.fire('controls','submit');assert.equal(t.el('used-total').textContent,'0');assert.equal(t.el('export').disabled,false);
+ t.el('pattern').value='mixed';t.fire('pattern','input');t.fire('pattern','change');
+ assert.match(t.el('balance').textContent,/3,456/);assert.equal(t.el('export').disabled,false);
+ t.el('gardenM2').value='';t.fire('gardenM2','input');t.el('capacityL').value='1000';t.fire('capacityL','input');
+ assert.equal(t.el('export').disabled,true);t.el('reset').click();assert.equal(t.el('export').disabled,false);
+ t.el('capacityL').value='800';t.fire('capacityL','input');assert.equal(t.el('capacity-label').textContent,'800 L');
+ }finally{t.dom.window.close();}
+});

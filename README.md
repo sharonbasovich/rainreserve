@@ -23,7 +23,7 @@ Open http://127.0.0.1:4173/. The server binds to this computer only. `PORT=4174 
 2. Compare the 200 L baseline with a 400 L scenario. Move the scenario slider to see how capacity affects modeled use, overflow, and unmet demand.
 3. Inspect a rainy day and the dry days after it using the day slider or storage chart.
 4. Change to **Long dry spell**, **Two heavy storms**, or **No rain**. These are invented examples, not historical or forecast local weather.
-5. Change roof/garden assumptions and select **Update comparison**. Unapplied edits disable export and clearly retain the previous result.
+5. Change roof/garden assumptions and select **Update comparison**. Unapplied edits disable export and retain the previous result, even if you move the capacity slider, switch patterns or import rainfall. Select Update comparison to apply all pending values together.
 6. Download a CSV containing the applied assumptions, rainfall and its provenance, and both daily balances. The CSV is created locally and not uploaded.
 
 The public UI supports the four 30-day synthetic fixtures or 1–366 imported daily values, 0–1,000 m² connected roof/garden, 0–20 mm/day target, 0–100% efficiency, a 0–2,000 L scenario slider and 0–10,000 L baseline. These are software limits, not recommendations. Fields enforce their displayed increments. The pure model additionally supports up to 366 days, 0–500 mm daily rain, 0–10,000 L capacity and initial storage from zero to capacity; the UI always starts empty.
