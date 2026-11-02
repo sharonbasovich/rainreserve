@@ -1,0 +1,34 @@
+import {test,expect} from '@playwright/test';
+import {readFile} from 'node:fs/promises';
+test('shortfall summaries explain default totals and keyboard inspection; pending edits stay applied',async({page})=>{
+ await page.goto('./');
+ await expect(page.locator('#baseline-shortfall-count')).toHaveText('8 of 30 days');
+ await expect(page.locator('#scenario-shortfall-count')).toHaveText('2 of 30 days');
+ await expect(page.locator('#scenario-shortfall-run')).toHaveText('Longest: 2 consecutive days · day 1–2');
+ await page.locator('#shortfall-inspect').focus();await page.keyboard.press('Enter');
+ await expect(page.locator('.day-bar').first()).toBeFocused();await page.keyboard.press('ArrowRight');
+ await expect(page.locator('#day')).toHaveValue('2');
+ await page.locator('#gardenM2').fill('0');
+ await expect(page.locator('#scenario-shortfall-count')).toHaveText('2 of 30 days');
+ await expect(page.locator('#export')).toBeDisabled();
+ await page.getByRole('button',{name:'Update comparison'}).click();
+ await expect(page.locator('#scenario-shortfall-count')).toHaveText('0 of 30 days');
+ await expect(page.locator('#shortfall-inspect')).toBeDisabled();
+ await page.getByRole('button',{name:'Reset demo'}).click();
+ await page.locator('#pattern').selectOption('none');
+ await expect(page.locator('#scenario-shortfall-run')).toHaveText('Longest: 30 consecutive days · day 1–30');
+});
+test('imported dates, ties, CSV shortfall metadata, reset and narrow reduced-motion focus',async({page})=>{
+ await page.setViewportSize({width:390,height:844});await page.emulateMedia({reducedMotion:'reduce'});await page.goto('./');
+ await page.locator('#capacityL').focus();await page.keyboard.press('Home');
+ await page.getByText('Use your own rainfall',{exact:true}).click();
+ await page.locator('#rain-file').setInputFiles({name:'rain.csv',mimeType:'text/csv',buffer:Buffer.from('date,rain_mm\n2026-12-30,3\n2026-12-31,0\n2027-01-01,0\n2027-01-02,3\n2027-01-03,0\n2027-01-04,0')});
+ await expect(page.locator('#scenario-shortfall-count')).toHaveText('4 of 6 days');
+ await expect(page.locator('#scenario-shortfall-run')).toHaveText('Longest: 2 consecutive days · 2026-12-31 to 2027-01-01');
+ await page.locator('#shortfall-inspect').click();await expect(page.locator('.day-bar').nth(1)).toBeFocused();await expect(page.locator('#day')).toHaveValue('2');
+ const focused=await page.locator('.day-bar').nth(1).boundingBox();expect(focused.y).toBeGreaterThanOrEqual(0);expect(focused.y+focused.height).toBeLessThanOrEqual(844);
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+ const dl=page.waitForEvent('download');await page.locator('#export').click();const csv=await readFile(await(await dl).path(),'utf8');
+ expect(csv).toContain('"shortfall_day_threshold_l","0.1"');expect(csv).toContain('"scenario_shortfall_days","4"');expect(csv).toContain('"scenario_longest_shortfall_run_start_day","2"');expect(csv).toContain('"scenario_longest_shortfall_run_end_day","3"');
+ await page.getByRole('button',{name:'Reset demo'}).click();await expect(page.locator('#scenario-shortfall-run')).not.toContainText('2026-12');
+});

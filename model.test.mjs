@@ -101,3 +101,30 @@ test('larger empty barrel never reduces total water used for same scenario', () 
     assert.ok(b.used + 1e-9 >= a.used); assert.ok(b.unmet <= a.unmet + 1e-9);
   }
 });
+
+const {summarizeShortfalls}=await import('./model.mjs');
+test('shortfall threshold, earliest ties, zero and isolated runs',()=>{
+ const rows=[0,.099999,.1,.2,0,.3,.4].map(unmet=>({unmet}));
+ assert.deepEqual(summarizeShortfalls(rows),{count:4,longest:{start:3,end:4,length:2}});
+ assert.deepEqual(summarizeShortfalls([{unmet:0}]),{count:0,longest:null});
+ assert.deepEqual(summarizeShortfalls([{unmet:.1}]),{count:1,longest:{start:1,end:1,length:1}});
+ assert.deepEqual(summarizeShortfalls(Array.from({length:366},()=>({unmet:1}))),{count:366,longest:{start:1,end:366,length:366}});
+});
+test('shortfall summary matches independent run grouping for all 1024 ten-day patterns',()=>{
+ for(let mask=0;mask<1024;mask++){
+  const values=Array.from({length:10},(_,i)=>(mask>>i)&1);
+  const runs=values.join('').split('0').filter(Boolean);
+  const max=Math.max(0,...runs.map(s=>s.length));
+  const start=max?values.join('').indexOf('1'.repeat(max))+1:null;
+  const input=values.map(unmet=>Object.freeze({unmet}));
+  const got=summarizeShortfalls(Object.freeze(input));
+  assert.equal(got.count,values.reduce((a,b)=>a+b,0));
+  assert.deepEqual(got.longest,max?{start,end:start+max-1,length:max}:null);
+ }
+});
+
+test('mathematical 0.1 L deficit is not lost to floating-point subtraction',()=>{
+ const r=simulate({roofM2:1,gardenM2:1,demandMm:.3,efficiency:.1,capacityL:400,initialL:0},[2,0]);
+ assert.deepEqual(summarizeShortfalls(r.days),{count:1,longest:{start:2,end:2,length:1}});
+ assert.deepEqual(summarizeShortfalls([{unmet:.099999}]),{count:0,longest:null});
+});

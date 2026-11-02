@@ -3,11 +3,11 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
 import {JSDOM} from 'jsdom';
-import {simulate} from './model.mjs';
+import {simulate,summarizeShortfalls} from './model.mjs';
 import {parseRainfallCSV,MAX_CSV_BYTES,TEMPLATE} from './rainfall.mjs';
 const html=readFileSync(new URL('index.html',import.meta.url),'utf8');
 const script=readFileSync(new URL('app.mjs',import.meta.url),'utf8').replace(/^import .*;\n/gm,'');
-function ui(){const dom=new JSDOM(html,{runScripts:'outside-only',url:'https://example.test/'});const w=dom.window;Object.assign(w,{simulate,parseRainfallCSV,MAX_CSV_BYTES,TEMPLATE});let download;w.URL.createObjectURL=blob=>{download=blob;return 'blob:test'};w.URL.revokeObjectURL=()=>{};w.HTMLAnchorElement.prototype.click=()=>{};vm.runInContext(script,dom.getInternalVMContext());const el=id=>w.document.getElementById(id);const fire=(id,type)=>el(id).dispatchEvent(new w.Event(type,{bubbles:true}));return {dom,w,el,fire,get download(){return download}};}
+function ui(){const dom=new JSDOM(html,{runScripts:'outside-only',url:'https://example.test/'});const w=dom.window;Object.assign(w,{simulate,summarizeShortfalls,parseRainfallCSV,MAX_CSV_BYTES,TEMPLATE});let download;w.URL.createObjectURL=blob=>{download=blob;return 'blob:test'};w.URL.revokeObjectURL=()=>{};w.HTMLAnchorElement.prototype.click=()=>{};vm.runInContext(script,dom.getInternalVMContext());const el=id=>w.document.getElementById(id);const fire=(id,type)=>el(id).dispatchEvent(new w.Event(type,{bubbles:true}));return {dom,w,el,fire,get download(){return download}};}
 function start(t,text){let release;const file={size:text.length,text:()=>new Promise(r=>release=()=>r(text))};Object.defineProperty(t.el('rain-file'),'files',{configurable:true,value:[file]});t.fire('rain-file','change');return async()=>{release();await new Promise(r=>setImmediate(r))};}
 const csv='date,rain_mm\n2026-10-01,8\n2026-10-02,0';
 test('independent import uses matching dates/model, errors preserve applied source, reset clears',async()=>{const t=ui();try{await start(t,csv)();assert.equal(t.el('chart').children.length,2);assert.equal(t.el('used-total').textContent,'60');assert.match(t.el('rain-label').textContent,/2026-10-01/);assert.equal(t.el('day').max,'2');assert.match(t.el('data-tag').textContent,/UNVERIFIED/);await start(t,'date,rain_mm\n2026-10-01,unknown')();assert.equal(t.el('chart').children.length,2);assert.match(t.el('csv-status').textContent,/Not imported/);assert.equal(t.el('export').disabled,false);t.el('reset').click();assert.equal(t.el('chart').children.length,30);assert.equal(t.el('custom-option').disabled,true);assert.match(t.el('data-tag').textContent,/SYNTHETIC/);}finally{t.dom.window.close()}});

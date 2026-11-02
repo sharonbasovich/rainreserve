@@ -46,3 +46,20 @@ export function simulate(params, rainfall) {
   totals.end = storage;
   return { days, totals };
 }
+
+/** Summarize days with at least 0.1 L unmet; not a plant-health or reliability score.
+ * A 1e-9 L tolerance absorbs arithmetic noise at the threshold.
+ * Equal longest runs select the earliest. A no-target day breaks a run.
+ */
+export function summarizeShortfalls(days) {
+  let count=0, start=null, longest=null;
+  for (let i=0;i<days.length;i++) {
+    if (days[i].unmet >= 0.1 - 1e-9) {
+      count++;
+      if (start===null) start=i+1;
+      const length=i+2-start;
+      if (!longest || length>longest.length) longest={start,end:i+1,length};
+    } else start=null;
+  }
+  return {count,longest};
+}
