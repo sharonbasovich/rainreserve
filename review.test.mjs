@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
-import {simulate} from './model.mjs';
+import {simulate,summarizeShortfalls} from './model.mjs';
 import {parseRainfallCSV,MAX_CSV_BYTES,TEMPLATE} from './rainfall.mjs';
 // Independent review harness; jsdom is development-only.
 const {JSDOM}=await import('jsdom');
@@ -10,7 +10,7 @@ const html=readFileSync(new URL('index.html',import.meta.url),'utf8');
 const script=readFileSync(new URL('app.mjs',import.meta.url),'utf8').replace(/^import .*;$/gm,'');
 function ui(){
  const dom=new JSDOM(html,{runScripts:'outside-only',url:'https://example.test/'});
- const w=dom.window;w.simulate=simulate;Object.assign(w,{parseRainfallCSV,MAX_CSV_BYTES,TEMPLATE});let download;
+ const w=dom.window;w.simulate=simulate;w.summarizeShortfalls=summarizeShortfalls;Object.assign(w,{parseRainfallCSV,MAX_CSV_BYTES,TEMPLATE});let download;
  w.URL.createObjectURL=blob=>{download=blob;return 'blob:test';};w.URL.revokeObjectURL=()=>{};
  w.HTMLAnchorElement.prototype.click=function(){};
  vm.runInContext(script,dom.getInternalVMContext());

@@ -80,3 +80,6 @@ In PowerShell, set `$env:STATIC_PREFIX='/rainreserve/'` before `npm run test:bro
 
 Pages does not run `server.mjs` or inherit its local HTTP headers. The public app remains a static browser-local explorer without accounts, persistence, a weather API, or backend. A different static host can serve the same `dist` artifact if Pages later limits the project. No hackathon submission is performed by this workflow.
 
+
+### Look beyond total litres
+The shortfall panel compares how many days have **at least 0.1 L** of unmet modeled garden target and the longest consecutive run for each capacity. Ties use the earliest run; no-target or fully supplied days interrupt it. The scenario shortcut selects and focuses the first day of that run in the chart. Imported rainfall uses its supplied calendar dates. Zero qualifying days disables the shortcut. Pending assumptions leave this panel on the last applied comparison, like the other results. CSV exports include the threshold, counts and run bounds alongside unrounded daily balances. A 1e-9 L numerical tolerance avoids excluding exact-threshold deficits because of floating-point subtraction. This descriptive threshold is not a biological stress limit, drought forecast, measured reliability, or plant-care recommendation.
