@@ -27,5 +27,5 @@ for(const width of [1440,360])test(`small modeled differences remain honest at $
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
  expect((await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa','wcag21aa']).analyze()).violations).toEqual([]);
  await page.locator('#capacityL').fill('200');await expect(page.locator('#comparison')).toHaveText('Same modeled use as baseline.');
- await page.getByRole('button',{name:'Reset demo'}).click();await expect(page.locator('.day-bar')).toHaveCount(30);await expect(page.locator('#comparison')).not.toContainText('Less than');
+ await page.getByRole('button',{name:'Reset demo'}).click();await page.locator('#reset-confirm').click();await expect(page.locator('.day-bar')).toHaveCount(30);await expect(page.locator('#comparison')).not.toContainText('Less than');
 });

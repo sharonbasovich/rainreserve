@@ -18,7 +18,7 @@ test('pending and invalid inputs preserve prior results; reset and repeated comp
  await page.goto('./');const before=await page.locator('#used-total').textContent();
  await page.locator('#roofM2').fill('1001');await expect(page.locator('#export')).toBeDisabled();await page.getByRole('button',{name:'Update comparison'}).click();await expect(page.locator('#used-total')).toHaveText(before);
  await page.locator('#roofM2').fill('31');await page.getByRole('button',{name:'Update comparison'}).click();await expect(page.locator('#used-total')).toHaveText(format(simulate({...p,roofM2:31},mixed).totals.used));await expect(page.locator('#export')).toBeEnabled();
- for(let i=0;i<3;i++){await page.getByRole('button',{name:'Reset demo'}).click();await expect(page.locator('#roofM2')).toHaveValue('40');await expect(page.locator('#used-total')).toHaveText(before);}
+ for(let i=0;i<3;i++){await page.getByRole('button',{name:'Reset demo'}).click();await page.locator('#reset-confirm').click();await expect(page.locator('#roofM2')).toHaveValue('40');await expect(page.locator('#used-total')).toHaveText(before);}
  await page.reload();await expect(page.locator('#day')).toHaveValue('1');
 });
 test('all scenarios and zero extremes are finite and synchronized',async({page})=>{
@@ -77,7 +77,7 @@ test('local rainfall replaces demos, preserves dates/provenance in export and re
  await page.locator('#day').focus();await page.keyboard.press('End');await expect(page.locator('#rain-label')).toContainText('2024-03-01');
  const downloaded=page.waitForEvent('download');await page.locator('#export').click();const download=await downloaded;const csv=await readFile(await download.path(),'utf8');expect(download.suggestedFilename()).toBe('rainreserve-user-rainfall-comparison.csv');expect(csv).toContain('user-provided rainfall, unverified');expect(csv).toContain('"date"');expect(csv).toContain('"2024-02-29"');expect(csv.split('\r\n').filter(l=>/^"(baseline|scenario)","\d+"/.test(l))).toHaveLength(6);
  await page.locator('#pattern').selectOption('mixed');await expect(page.locator('.day-bar')).toHaveCount(30);await page.locator('#pattern').selectOption('custom');await expect(page.locator('.day-bar')).toHaveCount(3);
- await page.locator('#reset').click();await expect(page.locator('#pattern')).toHaveValue('mixed');await expect(page.locator('#custom-option')).toHaveJSProperty('disabled',true);await expect(page.locator('#data-tag')).toHaveText('SYNTHETIC DATA · 30 DAYS');expect(external).toEqual([]);
+ await page.locator('#reset').click();await page.locator('#reset-confirm').click();await expect(page.locator('#pattern')).toHaveValue('mixed');await expect(page.locator('#custom-option')).toHaveJSProperty('disabled',true);await expect(page.locator('#data-tag')).toHaveText('SYNTHETIC DATA · 30 DAYS');expect(external).toEqual([]);
 });
 test('invalid, oversize and repeated imports retain previous valid comparison and recover',async({page})=>{
  await page.goto('./');await page.getByText('Use your own rainfall',{exact:true}).click();const before=await page.locator('#used-total').textContent();
@@ -129,6 +129,6 @@ for(const width of [1440,390])test(`pending assumptions survive immediate action
  const e=page.waitForEvent('download');await page.locator('#export').click();const csv=await readFile(await (await e).path(),'utf8');
  expect(csv).toContain('"roof_m2","80"');expect(csv).toContain('"scenario_capacity_l","2000"');expect(csv).toContain('"Pattern","custom"');
  await page.locator('#roofM2').fill('1001');await page.locator('#capacityL').focus();await page.keyboard.press('Home');await expect(page.locator('#export')).toBeDisabled();
- await page.locator('#reset').click();await page.locator('#capacityL').focus();await page.keyboard.press('End');await expect(page.locator('#capacity-label')).toHaveText('2,000 L');await expect(page.locator('#export')).toBeEnabled();
+ await page.locator('#reset').click();await page.locator('#reset-confirm').click();await page.locator('#capacityL').focus();await page.keyboard.press('End');await expect(page.locator('#capacity-label')).toHaveText('2,000 L');await expect(page.locator('#export')).toBeEnabled();
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
 });
