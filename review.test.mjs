@@ -38,7 +38,7 @@ test('UI initializes, inspects day 3, invalid edits keep results and block expor
  t.el('chart').children[2].click();assert.equal(t.el('day').value,'3');assert.equal(t.el('storage-value').textContent,'256 L');
  t.el('roofM2').value='-1';t.fire('roofM2','input');assert.equal(t.el('export').disabled,true);
  t.fire('controls','submit');assert.equal(t.el('used-total').textContent,initial);assert.match(t.el('input-status').textContent,/valid values/);
- t.el('reset').click();assert.equal(t.el('roofM2').value,'40');assert.equal(t.el('day').value,'1');assert.equal(t.el('export').disabled,false);
+ t.el('reset').click();t.el('reset-confirm').click();assert.equal(t.el('roofM2').value,'40');assert.equal(t.el('day').value,'1');assert.equal(t.el('export').disabled,false);
  }finally{t.dom.window.close();}
 });
 test('zero rain / zero capacity remain finite and same-capacity comparison matches',()=>{
@@ -85,7 +85,7 @@ test('immediate controls do not silently commit pending assumptions',()=>{
  t.el('pattern').value='mixed';t.fire('pattern','input');t.fire('pattern','change');
  assert.match(t.el('balance').textContent,/3,456/);assert.equal(t.el('export').disabled,false);
  t.el('gardenM2').value='';t.fire('gardenM2','input');t.el('capacityL').value='1000';t.fire('capacityL','input');
- assert.equal(t.el('export').disabled,true);t.el('reset').click();assert.equal(t.el('export').disabled,false);
+ assert.equal(t.el('export').disabled,true);t.el('reset').click();t.el('reset-confirm').click();assert.equal(t.el('export').disabled,false);
  t.el('capacityL').value='800';t.fire('capacityL','input');assert.equal(t.el('capacity-label').textContent,'800 L');
  }finally{t.dom.window.close();}
 });
@@ -101,5 +101,5 @@ test('daily comparison uses the same applied day and capacities, preserving pend
  assert.equal(el('baseline-day-used').textContent,'60 L');assert.match(el('day-difference').textContent,/same modeled/);
  el('capacityL').value=0;fire('capacityL','input');assert.match(el('day-difference').textContent,/60 L less/);
  el('pattern').value='none';fire('pattern','change');assert.match(el('day-difference').textContent,/same modeled/);
- fire('reset','click');assert.equal(el('day').value,'1');assert.equal(el('day-baseline-heading').textContent,'Baseline · 200 L');
+ fire('reset','click');fire('reset-confirm','click');assert.equal(el('day').value,'1');assert.equal(el('day-baseline-heading').textContent,'Baseline · 200 L');
 });
