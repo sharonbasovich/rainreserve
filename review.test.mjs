@@ -89,3 +89,17 @@ test('immediate controls do not silently commit pending assumptions',()=>{
  t.el('capacityL').value='800';t.fire('capacityL','input');assert.equal(t.el('capacity-label').textContent,'800 L');
  }finally{t.dom.window.close();}
 });
+
+test('daily comparison uses the same applied day and capacities, preserving pending edits',()=>{
+ const {el,fire}=ui(); el('day').value=20;fire('day','input');
+ assert.equal(el('baseline-day-used').textContent,'20 L');assert.equal(el('day-used').textContent,'60 L');
+ assert.match(el('day-difference').textContent,/40 L more/);
+ el('baselineL').value=1000;fire('baselineL','input');
+ assert.equal(el('day-baseline-heading').textContent,'Baseline · 200 L');
+ assert.equal(el('baseline-day-used').textContent,'20 L');
+ fire('controls','submit');assert.equal(el('day-baseline-heading').textContent,'Baseline · 1,000 L');
+ assert.equal(el('baseline-day-used').textContent,'60 L');assert.match(el('day-difference').textContent,/same modeled/);
+ el('capacityL').value=0;fire('capacityL','input');assert.match(el('day-difference').textContent,/60 L less/);
+ el('pattern').value='none';fire('pattern','change');assert.match(el('day-difference').textContent,/same modeled/);
+ fire('reset','click');assert.equal(el('day').value,'1');assert.equal(el('day-baseline-heading').textContent,'Baseline · 200 L');
+});

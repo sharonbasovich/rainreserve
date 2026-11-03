@@ -51,7 +51,16 @@ $('shortfall-inspect').addEventListener('click',()=>{
  const run=current?.shortfalls[1].longest;if(!run)return;
  $('day').value=run.start;inspect();$('chart').children[run.start-1].focus();
 });
-function inspect(){if(!current)return;const d=current.scenario.days[$('day').valueAsNumber-1];$('day-number').textContent=d.day;$('day-output').textContent=`${d.day} / ${current.rain.length}`;$('rain-label').textContent=`${current.dates?current.dates[d.day-1]+' · ':''}${fmt(d.rainMm)} mm rain`;$('water-fill').style.height=`${current.params.capacityL?100*d.end/current.params.capacityL:0}%`;$('storage-value').textContent=`${fmt(d.end)} L`;for(const [id,key] of [['day-inflow','inflow'],['day-used','used'],['day-overflow','overflow'],['day-unmet','unmet']])$(id).textContent=`${fmt(d[key])} L`;for(const b of $('chart').children){const selected=Number(b.dataset.day)===d.day;b.setAttribute('aria-pressed',String(selected));b.tabIndex=selected?0:-1;}const selected=$('chart').children[d.day-1], scroller=$('chart').parentElement;if(selected){const bar=selected.getBoundingClientRect(),view=scroller.getBoundingClientRect();if(bar.right>view.right)scroller.scrollLeft+=bar.right-view.right+3;else if(bar.left<view.left)scroller.scrollLeft-=view.left-bar.left+3;}}
+function inspect(){if(!current)return;const d=current.scenario.days[$('day').valueAsNumber-1];$('day-number').textContent=d.day;$('day-output').textContent=`${d.day} / ${current.rain.length}`;$('rain-label').textContent=`${current.dates?current.dates[d.day-1]+' · ':''}${fmt(d.rainMm)} mm rain`;$('water-fill').style.height=`${current.params.capacityL?100*d.end/current.params.capacityL:0}%`;$('storage-value').textContent=`${fmt(d.end)} L`;const baseline=current.baseline.days[d.day-1];
+$('day-baseline-heading').textContent=`Baseline · ${fmt(current.baseParams.capacityL)} L`;
+$('day-scenario-heading').textContent=`Scenario · ${fmt(current.params.capacityL)} L`;
+for(const key of ['inflow','used','overflow','unmet']){
+ $('day-'+key).textContent=`${fmt(d[key])} L`;
+ $('baseline-day-'+key).textContent=`${fmt(baseline[key])} L`;
+}
+const difference=d.used-baseline.used;
+$('day-difference').textContent=difference===0?'Both capacities supply the same modeled amount on this day.':fmt(Math.abs(difference))==='0'?'Less than 0.1 L difference in modeled use on this day.':`The scenario supplies ${fmt(Math.abs(difference))} L ${difference>0?'more':'less'} from storage on this day. This is modeled, not measured savings.`;
+for(const b of $('chart').children){const selected=Number(b.dataset.day)===d.day;b.setAttribute('aria-pressed',String(selected));b.tabIndex=selected?0:-1;}const selected=$('chart').children[d.day-1], scroller=$('chart').parentElement;if(selected){const bar=selected.getBoundingClientRect(),view=scroller.getBoundingClientRect();if(bar.right>view.right)scroller.scrollLeft+=bar.right-view.right+3;else if(bar.left<view.left)scroller.scrollLeft-=view.left-bar.left+3;}}
 $('chart').addEventListener('keydown',event=>{
  if(event.altKey||event.ctrlKey||event.metaKey||!event.target.matches('.day-bar')||!current)return;
  const day=Number(event.target.dataset.day),last=current.rain.length;
