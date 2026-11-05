@@ -87,3 +87,9 @@ The shortfall panel compares how many days have **at least 0.1 L** of unmet mode
 ### Compare one day directly
 
 Select a chart day or move Inspect day to compare baseline and scenario collection, use, overflow and unmet target side by side. Capacity labels and daily differences use the last applied comparison, even while assumptions are edited. The tank and chart still show the scenario. Differences below 0.1 L display precision are identified rather than called zero. These are modeled comparisons, not measured savings.
+
+### Reconcile a selected day
+
+The daily comparison includes starting storage, collected water, overflow, the garden target remaining after direct rain, water used, unmet target and ending storage for both capacities. On day 20 of the default example, the baseline starts with 20 L and uses all of it; the scenario starts with 220 L, uses 60 L and retains 160 L. This explains the difference even though neither barrel collects rain that day.
+
+Start storage + collected = overflow + used + end storage. Garden target after rain = used + unmet target. Values use the applied comparison while edits are pending. Displayed values are rounded independently to 0.1 L and may not sum exactly; the CSV retains unrounded daily values. These remain hypothetical model outputs, including when rainfall is supplied by the user.
