@@ -54,7 +54,7 @@ $('shortfall-inspect').addEventListener('click',()=>{
 function inspect(){if(!current)return;const d=current.scenario.days[$('day').valueAsNumber-1];$('day-number').textContent=d.day;$('day-output').textContent=`${d.day} / ${current.rain.length}`;$('rain-label').textContent=`${current.dates?current.dates[d.day-1]+' · ':''}${fmt(d.rainMm)} mm rain`;$('water-fill').style.height=`${current.params.capacityL?100*d.end/current.params.capacityL:0}%`;$('storage-value').textContent=`${fmt(d.end)} L`;const baseline=current.baseline.days[d.day-1];
 $('day-baseline-heading').textContent=`Baseline · ${fmt(current.baseParams.capacityL)} L`;
 $('day-scenario-heading').textContent=`Scenario · ${fmt(current.params.capacityL)} L`;
-for(const key of ['inflow','used','overflow','unmet']){
+for(const key of ['initial','inflow','overflow','demand','used','unmet','end']){
  $('day-'+key).textContent=`${fmt(d[key])} L`;
  $('baseline-day-'+key).textContent=`${fmt(baseline[key])} L`;
 }
