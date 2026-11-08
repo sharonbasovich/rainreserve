@@ -1,7 +1,16 @@
 name: Verify RainReserve
 on:
   push:
+    # These exact documentation files are not build or test inputs.
+    paths-ignore:
+      - 'README.md'
+      - 'VERIFICATION.md'
+      - 'THIRD-PARTY.md'
   pull_request:
+    paths-ignore:
+      - 'README.md'
+      - 'VERIFICATION.md'
+      - 'THIRD-PARTY.md'
   workflow_dispatch:
 permissions:
   contents: read
