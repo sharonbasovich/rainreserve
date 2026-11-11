@@ -1,20 +1,41 @@
 import {expect} from '@playwright/test';
 import {readFile} from 'node:fs/promises';
-import {createHash} from 'node:crypto';
+import {createHash,randomUUID} from 'node:crypto';
 import {simulate,summarizeShortfalls} from '../model.mjs';
 
 export async function reloadWithDecision(page,decision,observations){
- const dialogs=page.waitForEvent('dialog',{timeout:5000});
- // Start navigation before awaiting the event. Keep rejection handled even if
- // the required dialog is missing; a silent navigation is never a passing case.
- const navigation=page.reload({timeout:10000}).then(()=>({completed:true}),error=>({error:error.message}));
- const dialog=await dialogs;
- expect(dialog.type()).toBe('beforeunload');
- if(decision==='cancel')await dialog.dismiss();else await dialog.accept();
- const outcome=await navigation;
- if(outcome.error)expect(decision==='cancel'&&/ERR_ABORTED|NS_BINDING_ABORTED/.test(outcome.error)).toBe(true);
- else expect(outcome.completed).toBe(true);
- observations.push({decision,type:dialog.type(),...outcome});
+ expect(['cancel','leave']).toContain(decision);
+ const token=randomUUID();
+ await page.evaluate(value=>{document.__rainreserveReloadIdentity=value;},token);
+ const originalURL=page.url();let mainFrameCommits=0;
+ const committed=frame=>{if(frame===page.mainFrame())mainFrameCommits++;};
+ page.on('framenavigated',committed);
+ try{
+  const waiting=page.waitForEvent('dialog',{timeout:5000}).then(value=>({value}),error=>({error}));
+  // Queue the real browser reload without a page.reload() load promise: a
+  // correctly canceled navigation must never produce a new document load.
+  await page.evaluate(()=>{setTimeout(()=>window.location.reload(),0);});
+  const observed=await waiting;if(observed.error)throw observed.error;
+  const dialog=observed.value;expect(dialog.type()).toBe('beforeunload');
+  expect(mainFrameCommits).toBe(0);
+  if(decision==='cancel'){
+   await dialog.dismiss();
+   // Complete a later task in the retained document after the dismissal.
+   const retained=await page.evaluate(()=>new Promise(resolve=>setTimeout(()=>resolve({identity:document.__rainreserveReloadIdentity,url:location.href}),0)));
+   expect(retained.identity).toBe(token);expect(retained.url).toBe(originalURL);
+   expect(mainFrameCommits).toBe(0);
+   observations.push({decision,type:dialog.type(),dismissed:true,documentRetained:true,mainFrameCommits,url:retained.url});
+  }else{
+   const navigation=page.waitForEvent('framenavigated',{predicate:frame=>frame===page.mainFrame(),timeout:10000}).then(value=>({value}),error=>({error}));
+   await dialog.accept();
+   const navigated=await navigation;if(navigated.error)throw navigated.error;
+   await page.waitForLoadState('load',{timeout:10000});
+   const loaded=await page.evaluate(()=>({identity:document.__rainreserveReloadIdentity,url:location.href,readyState:document.readyState}));
+   expect(loaded.identity).toBeUndefined();expect(loaded.url).toBe(originalURL);
+   expect(loaded.readyState).toBe('complete');expect(mainFrameCommits).toBe(1);
+   observations.push({decision,type:dialog.type(),accepted:true,documentReplaced:true,loaded:true,mainFrameCommits,url:loaded.url});
+  }
+ }finally{page.off('framenavigated',committed);}
 }
 export function reference(rain,dates,capacityL=400,roofM2=40){
  const params={roofM2,gardenM2:20,demandMm:3,efficiency:0.8,capacityL,initialL:0};
