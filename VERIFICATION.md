@@ -62,10 +62,17 @@ Local runs used the installed Playwright Chromium with a loopback-only test serv
 
 ## 2026-11-11: refreshed private session protection candidate
 
-This candidate preserves the current main's SVG action and its regressions, documentation and workflow. It integrates the previously reviewed best-effort beforeunload protection and reusable number formatter. The warning is not recovery or persistence: downloads remain reports, not restorable sessions. There is no model, parser, CSV format, dependency, workflow or deployment change.
+The initial source-only checkpoint preserved the current main's SVG action and its regressions, documentation and workflow. It integrated the previously reviewed best-effort beforeunload protection and reusable number formatter. The warning is not recovery or persistence: downloads remain reports, not restorable sessions. At that initial checkpoint there was no model, parser, CSV format, dependency, workflow or deployment change. The later infrastructure recovery is described below.
 
 Local source checks passed 21 model/parser tests, 31 review groups, syntax and build using Node 24.22.1 and already-installed jsdom 30.1.1, rather than pinned 27.4.0. This is qualified source evidence, not a locked dependency or browser pass.
 
 The browser suite adds desktop/360px native Cancel and Leave checks with bounded required-dialog observation. Seven repeated canceled reloads retain edits/imports; explicit apply/default reset and accepted reload are distinguished. Actual saved comparison bytes are checked against separately assembled canonical CSV using the synchronous model. A 366-day leap-year case checks all chart labels across six keyboard slider settings, day 366 keyboard navigation, exact saved bytes before/after canceled leave, and reset after accepted reload. Structured decisions, chart observations and raw downloaded files are retained in test-results. These are synthetic model-parity checks, not independent hydrology or real-world evidence.
 
 Local browser execution was not performed. Exact-commit hosted tests, artifact and visual review, and production verification remain separate; this draft checkpoint does not claim any of them passed.
+
+
+### Hosted installation interruption and candidate recovery
+
+Initial draft run [43062962414](https://github.com/sharonbasovich/rainreserve/actions/runs/43062962414) passed pinned npm installation, 21 model/parser tests, 31 review groups, syntax and build. It ended cancelled after about 12 minutes during Ubuntu package-index retrieval for the browser/system dependency installation. Browser tests were skipped and no browser artifacts were produced; this was not a browser-test failure or pass. The observed log does not establish a DNS failure.
+
+The candidate verification and production-browser jobs now use the official `mcr.microsoft.com/playwright:v1.64.1-noble` image, matching the pinned Playwright package, with explicit Bash. The image supplies browsers and system dependencies; `npm ci` remains required and unchanged. Only the redundant browser/system install commands are removed. Test commands, dependency lock, timeouts, permissions, checkout settings, artifact retention and deployment conditions remain unchanged. This source change is not evidence of successful image retrieval, browser execution or production verification. The image is version-tagged, not digest-pinned.
