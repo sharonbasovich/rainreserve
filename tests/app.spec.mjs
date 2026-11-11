@@ -1,5 +1,18 @@
 import {test,expect} from "@playwright/test";
 
+test('update arrow is decorative and keyboard submission keeps its accessible name',async({page})=>{
+ await page.goto('./');
+ const update=page.getByRole('button',{name:'Update comparison',exact:true});
+ await expect(update).toHaveCount(1);
+ const icon=update.locator('svg');await expect(icon).toBeVisible();
+ await expect(icon).toHaveAttribute('aria-hidden','true');await expect(icon).toHaveAttribute('focusable','false');
+ await page.locator('#roofM2').fill('80');await expect(page.locator('#export')).toBeDisabled();
+ await update.focus();await page.keyboard.press('Enter');await expect(update).toBeFocused();
+ await expect(page.locator('#export')).toBeEnabled();await expect(page.locator('#input-status')).toContainText('Comparison updated');
+ await page.keyboard.press('Tab');await expect(page.locator('#day')).toBeFocused();
+ await update.scrollIntoViewIfNeeded();await page.screenshot({path:'test-results/update-comparison-arrow.png'});
+});
+
 test('selected-day comparison explains totals and preserves applied assumptions',async({page})=>{
  await page.goto('./');await page.getByRole('button',{name:'Day 20:',exact:false}).click();
  await expect(page.locator('#baseline-day-used')).toHaveText('20 L');await expect(page.locator('#day-used')).toHaveText('60 L');await expect(page.locator('#day-difference')).toContainText('40 L more');

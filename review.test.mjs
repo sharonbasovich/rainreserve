@@ -18,6 +18,23 @@ function ui(){
  const fire=(id,event)=>el(id).dispatchEvent(new w.Event(event,{bubbles:true,cancelable:true}));
  return {dom,w,el,fire,get download(){return download;}};
 }
+test('update comparison uses a decorative font-independent arrow without changing submission',()=>{
+ const t=ui();try{
+ const button=t.el('controls').querySelector('button[type="submit"]');
+ assert.equal(button.textContent.trim(),'Update comparison');
+ const icon=button.querySelector('svg');assert.ok(icon);
+ assert.equal(icon.namespaceURI,'http://www.w3.org/2000/svg');
+ assert.equal(icon.getAttribute('aria-hidden'),'true');assert.equal(icon.getAttribute('focusable'),'false');
+ assert.equal(icon.getAttribute('stroke'),'currentColor');assert.equal(icon.getAttribute('fill'),'none');
+ assert.equal(icon.getAttribute('viewBox'),'0 0 16 16');assert.equal(icon.getAttribute('width'),'13');assert.equal(icon.getAttribute('height'),'13');
+ assert.equal(icon.querySelector('path').getAttribute('d'),'M4 12 12 4M4 4h8v8');
+ assert.equal(icon.querySelector('text, image, use, title, [tabindex]'),null);
+ t.el('roofM2').value='80';t.fire('roofM2','input');assert.equal(t.el('export').disabled,true);
+ button.focus();icon.dispatchEvent(new t.w.MouseEvent('click',{bubbles:true,cancelable:true}));
+ assert.equal(t.w.document.activeElement,button);assert.equal(t.el('export').disabled,false);
+ assert.match(t.el('input-status').textContent,/Comparison updated/);
+ }finally{t.dom.window.close();}
+});
 test('independent exhaustive integer conservation across 4096 rain sequences and capacities',()=>{
  const p={roofM2:2,gardenM2:1,demandMm:2,efficiency:1,initialL:0,capacityL:0};
  for(let pattern=0;pattern<4096;pattern++){
