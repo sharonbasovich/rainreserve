@@ -8,16 +8,40 @@ import {parseRainfallCSV,MAX_CSV_BYTES,TEMPLATE} from './rainfall.mjs';
 const {JSDOM}=await import('jsdom');
 const html=readFileSync(new URL('index.html',import.meta.url),'utf8');
 const script=readFileSync(new URL('app.mjs',import.meta.url),'utf8').replace(/^import .*;$/gm,'');
-function ui(){
+function ui({trackFormatters=false}={}){
  const dom=new JSDOM(html,{runScripts:'outside-only',url:'https://example.test/'});
  const w=dom.window;w.simulate=simulate;w.summarizeShortfalls=summarizeShortfalls;Object.assign(w,{parseRainfallCSV,MAX_CSV_BYTES,TEMPLATE});let download;
+ let formatterConstructions=0;
+ if(trackFormatters)w.Intl.NumberFormat=new Proxy(w.Intl.NumberFormat,{construct(target,args,newTarget){formatterConstructions++;return Reflect.construct(target,args,newTarget);}});
  w.URL.createObjectURL=blob=>{download=blob;return 'blob:test';};w.URL.revokeObjectURL=()=>{};
  w.HTMLAnchorElement.prototype.click=function(){};
  vm.runInContext(script,dom.getInternalVMContext());
  const el=id=>w.document.getElementById(id);
  const fire=(id,event)=>el(id).dispatchEvent(new w.Event(event,{bubbles:true,cancelable:true}));
- return {dom,w,el,fire,get download(){return download;}};
+ return {dom,w,el,fire,get download(){return download;},get formatterConstructions(){return formatterConstructions;}};
 }
+test('one formatter serves 366-day charts and repeated capacity changes without changing labels',async()=>{
+ const t=ui({trackFormatters:true});try{
+ assert.equal(t.formatterConstructions,1,'initial rendering constructs one reusable formatter');
+ const rain=Array.from({length:366},(_,i)=>i%7===0?8.5:0);
+ const dates=rain.map((_,i)=>new Date(Date.UTC(2024,0,i+1)).toISOString().slice(0,10));
+ const csv=['date,rain_mm',...rain.map((value,i)=>`${dates[i]},${value}`)].join('\n');
+ Object.defineProperty(t.el('rain-file'),'files',{configurable:true,value:[{size:new TextEncoder().encode(csv).length,text:async()=>csv}]});
+ t.fire('rain-file','change');
+ await new Promise(resolve=>t.w.setTimeout(resolve,0));
+ assert.match(t.el('csv-status').textContent,/Loaded 366 daily values/);
+ const reference=n=>new Intl.NumberFormat('en',{maximumFractionDigits:1}).format(n);
+ for(const capacityL of [0,200,400,800,2000,400]){
+  t.el('capacityL').value=String(capacityL);t.fire('capacityL','input');
+  const expected=simulate({roofM2:40,gardenM2:20,demandMm:3,efficiency:0.8,initialL:0,capacityL},rain);
+  assert.equal(t.el('chart').children.length,366);
+  for(const [i,day]of expected.days.entries())assert.equal(t.el('chart').children[i].getAttribute('aria-label'),`Day ${day.day} (${dates[i]}): ${reference(day.end)} litres stored, ${reference(day.rainMm)} millimetres rain`);
+  assert.equal(t.el('used-total').textContent,reference(expected.totals.used));
+  assert.equal(t.el('capacity-label').textContent,`${reference(capacityL)} L`);
+ }
+ assert.equal(t.formatterConstructions,1,'imports and slider updates reuse the original formatter');
+ }finally{t.dom.window.close();}
+});
 test('update comparison uses a decorative font-independent arrow without changing submission',()=>{
  const t=ui();try{
  const button=t.el('controls').querySelector('button[type="submit"]');

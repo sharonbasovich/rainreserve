@@ -15,7 +15,7 @@ npm run build
 node server.mjs
 ```
 
-Open http://127.0.0.1:4173/. The server binds to this computer only. `PORT=4174 node server.mjs` selects another port. Do not open the HTML as a file; ES modules require an HTTP server. The built app makes no runtime network requests beyond its own static files. There is no account, automatic persistence, or backend. Refreshing restores the demo.
+Open http://127.0.0.1:4173/. The server binds to this computer only. `PORT=4174 node server.mjs` selects another port. Do not open the HTML as a file; ES modules require an HTTP server. The built app makes no runtime network requests beyond its own static files. There is no account, automatic persistence, or backend. Refreshing restores the demo. Changed draft or applied assumptions, a retained rainfall import, or an active file read request a best-effort browser exit warning. The untouched starting example and day inspection do not. Resetting, or returning both draft and applied settings to the starting example without retained rainfall, removes the warning. Browsers may suppress it, especially on mobile or without interaction; it is not autosave. CSV downloads are reports, not restorable sessions, and do not clear the warning.
 
 ## A complete comparison
 
