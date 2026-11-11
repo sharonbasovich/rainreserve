@@ -3,13 +3,35 @@ import {parseRainfallCSV, MAX_CSV_BYTES, TEMPLATE} from './rainfall.mjs';
 const $=id=>document.getElementById(id);
 const patterns={mixed:[0,0,8,2,0,0,0,12,0,1,0,0,0,0,18,3,0,0,0,0,0,6,0,0,0,4,0,0,0,0],dry:[12,4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,0],storms:[0,0,0,0,0,0,35,0,0,0,0,0,0,0,0,0,0,0,0,0,40,0,0,0,0,0,0,0,0,0],none:Array(30).fill(0)};
 const defaults={roofM2:40,gardenM2:20,demandMm:3,efficiency:80,capacityL:400,baselineL:200};
-const fmt=n=>new Intl.NumberFormat('en',{maximumFractionDigits:1}).format(n);
+// The format accessor returns a bound function; reuse its formatter while
+// rebuilding up to 366 chart days on each capacity-slider input.
+const fmt=new Intl.NumberFormat('en',{maximumFractionDigits:1}).format;
 let current, imported;
 let pendingAssumptions=false;
 const pendingMessage='Assumptions changed. Update comparison to apply them. Results show the previous settings.';
 let importVersion=0;
+let readingImportVersion=null,exitWarningAttached=false;
+// Downloads are comparison reports, not restorable sessions. Keep protection
+// until the complete draft and applied state return to the starting example.
+function hasSessionWork(){
+ if(imported||readingImportVersion!==null)return true;
+ if($('pattern').value!=='mixed'||Object.entries(defaults).some(([key,value])=>$(key).valueAsNumber!==value))return true;
+ return Boolean(current&&(current.pattern!=='mixed'||current.baseParams.capacityL!==defaults.baselineL||
+  ['roofM2','gardenM2','demandMm','capacityL'].some(key=>current.params[key]!==defaults[key])||current.params.efficiency!==defaults.efficiency/100));
+}
+function warnBeforeLeave(event){
+ if(!hasSessionWork())return;
+ event.preventDefault();event.returnValue='';
+}
+function refreshExitWarning(){
+ const needed=hasSessionWork();
+ if(needed===exitWarningAttached)return;
+ window[needed?'addEventListener':'removeEventListener']('beforeunload',warnBeforeLeave);
+ exitWarningAttached=needed;
+}
 function read(){return {roofM2:$('roofM2').valueAsNumber,gardenM2:$('gardenM2').valueAsNumber,demandMm:$('demandMm').valueAsNumber,efficiency:$('efficiency').valueAsNumber/100,capacityL:$('capacityL').valueAsNumber,initialL:0};}
 function update(resetDay=false,explicit=true){
+ refreshExitWarning();
  if(!explicit&&pendingAssumptions){$('capacity-label').textContent=`${fmt($('capacityL').valueAsNumber)} L (pending)`;$('input-status').textContent=pendingMessage;$('export').disabled=true;return;}
  if(!$('controls').checkValidity()){ $('input-status').textContent='Enter valid values within the displayed limits. Results still show the last valid comparison.'; $('export').disabled=true; return; }
  try{
@@ -36,6 +58,7 @@ function update(resetDay=false,explicit=true){
  $('chart').replaceChildren(...scenario.days.map(d=>{const b=document.createElement('button');b.type='button';b.className='day-bar';b.dataset.day=d.day;b.setAttribute('aria-label',`Day ${d.day}${current.dates?` (${current.dates[d.day-1]})`:""}: ${fmt(d.end)} litres stored, ${fmt(d.rainMm)} millimetres rain`);const fill=document.createElement('span');fill.className='bar-fill';fill.style.height=`${params.capacityL?100*d.end/params.capacityL:0}%`;b.append(fill);if(d.rainMm>0){const dot=document.createElement('span');dot.className='rain-dot';b.append(dot);}b.addEventListener('click',()=>{$('day').value=d.day;inspect();});return b;}));
  renderShortfalls();pendingAssumptions=false;inspect();if(chartHadFocus)$('chart').children[$('day').valueAsNumber-1]?.focus({preventScroll:true});$('input-status').textContent='Comparison updated. All figures use the assumptions shown above.';$('export').disabled=false;
  }catch(error){$('input-status').textContent=`Check inputs: ${error.message}`;$('export').disabled=true;}
+ finally{refreshExitWarning();}
 }
 function renderShortfalls(){
  const summaries=[summarizeShortfalls(current.baseline.days),summarizeShortfalls(current.scenario.days)];
@@ -69,24 +92,24 @@ $('chart').addEventListener('keydown',event=>{
  event.preventDefault();$('day').value=next;inspect();$('chart').children[next-1].focus({preventScroll:true});
 });
 $('controls').addEventListener('submit',event=>{event.preventDefault();update();});
-$('controls').addEventListener('input',event=>{if(['rain-file','pattern'].includes(event.target.id))return;if(event.target.id==='capacityL')update(false,false);else{pendingAssumptions=true;$('input-status').textContent=pendingMessage;$('export').disabled=true;}});
-$('pattern').addEventListener('change',()=>{importVersion++;$('rain-file').value='';$('csv-status').dataset.error='false';$('csv-status').textContent='Choose a CSV to replace the input. Your values are not independently verified.';update(false,false);});$('day').addEventListener('input',inspect);
+$('controls').addEventListener('input',event=>{if(['rain-file','pattern'].includes(event.target.id))return;if(event.target.id==='capacityL')update(false,false);else{pendingAssumptions=true;$('input-status').textContent=pendingMessage;$('export').disabled=true;refreshExitWarning();}});
+$('pattern').addEventListener('change',()=>{importVersion++;readingImportVersion=null;$('rain-file').value='';$('csv-status').dataset.error='false';$('csv-status').textContent='Choose a CSV to replace the input. Your values are not independently verified.';update(false,false);});$('day').addEventListener('input',inspect);
 function closeReset(){ $('reset-confirmation').hidden=true; $('reset').setAttribute('aria-expanded','false'); $('reset').focus(); }
 $('reset').addEventListener('click',()=>{ $('reset-confirmation').hidden=false; $('reset').setAttribute('aria-expanded','true'); $('reset-cancel').focus(); });
 $('reset-cancel').addEventListener('click',closeReset);
 $('controls').addEventListener('keydown',event=>{ if(event.key==='Escape'&&!$('reset-confirmation').hidden){event.preventDefault();closeReset();} });
-$('reset-confirm').addEventListener('click',()=>{closeReset();importVersion++;imported=undefined;$('rain-file').value='';$('custom-option').hidden=true;$('custom-option').disabled=true;$('csv-status').textContent='The example is synthetic, not measured weather. Your values are not independently verified.';$('csv-status').dataset.error='false';for(const [key,value] of Object.entries(defaults))$(key).value=value;$('pattern').value='mixed';$('day').value=1;update();});
+$('reset-confirm').addEventListener('click',()=>{closeReset();importVersion++;readingImportVersion=null;imported=undefined;$('rain-file').value='';$('custom-option').hidden=true;$('custom-option').disabled=true;$('csv-status').textContent='The example is synthetic, not measured weather. Your values are not independently verified.';$('csv-status').dataset.error='false';for(const [key,value] of Object.entries(defaults))$(key).value=value;$('pattern').value='mixed';$('day').value=1;update();});
 $('export').addEventListener('click',()=>{if(!current||$('export').disabled)return;const c=current;const rows=[[c.dates?'RainReserve comparison — user-provided rainfall, unverified; modeled results, not measured savings':'RainReserve comparison — synthetic rainfall, not observations'],['Model','capture then overflow then irrigation; direct rain offsets same-day target; empty start'],['Pattern',c.pattern],['Rainfall source',c.dates?'User-provided CSV; not independently verified':'Hand-authored synthetic example'],...(c.dates?[['Period start',c.dates[0]],['Period end',c.dates.at(-1)]]:[]),['roof_m2',c.params.roofM2],['garden_m2',c.params.gardenM2],['daily_target_mm',c.params.demandMm],['collection_efficiency',c.params.efficiency],['baseline_capacity_l',c.baseParams.capacityL],['scenario_capacity_l',c.params.capacityL],['shortfall_day_threshold_l',0.1],...['baseline','scenario'].flatMap((name,i)=>{const s=c.shortfalls[i];return [[name+'_shortfall_days',s.count],[name+'_longest_shortfall_run_days',s.longest?.length??0],[name+'_longest_shortfall_run_start_day',s.longest?.start??''],[name+'_longest_shortfall_run_end_day',s.longest?.end??'']];}),[],['scenario','day','rain_mm','start_l','collected_l','overflow_l','garden_target_l','used_l','unmet_l','end_l',...(c.dates?['date']:[])]];for(const [name,result] of [['baseline',c.baseline],['scenario',c.scenario]])for(const d of result.days)rows.push([name,d.day,d.rainMm,d.initial,d.inflow,d.overflow,d.demand,d.used,d.unmet,d.end,...(c.dates?[c.dates[d.day-1]]:[])]);const csv=rows.map(row=>row.map(value=>`"${String(value).replaceAll('"','""')}"`).join(',')).join('\r\n');const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download=c.dates?'rainreserve-user-rainfall-comparison.csv':'rainreserve-synthetic-comparison.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);});
 $('template').addEventListener('click',()=>{const url=URL.createObjectURL(new Blob([TEMPLATE],{type:'text/csv;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download='rainreserve-synthetic-example.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);});
 $('rain-file').addEventListener('change',async()=>{
  const file=$('rain-file').files[0];if(!file)return;
- const version=++importVersion;$('csv-status').textContent='Reading locally…';$('csv-status').dataset.error='false';
+ const version=++importVersion;readingImportVersion=version;refreshExitWarning();$('csv-status').textContent='Reading locally…';$('csv-status').dataset.error='false';
  try{
   if(file.size>MAX_CSV_BYTES)throw new Error('Choose a UTF-8 CSV no larger than 64 KiB.');
   const parsed=parseRainfallCSV(await file.text());if(version!==importVersion)return;
   imported=parsed;$('custom-option').hidden=false;$('custom-option').disabled=false;$('pattern').value='custom';
   $('csv-status').textContent=`Loaded ${parsed.rainfall.length} daily values locally. Check the dates and source; inputs are unverified.`;update(true,false);
  }catch(error){if(version!==importVersion)return;$('csv-status').textContent=`Not imported: ${error.message} Your previous rainfall is unchanged.`;$('csv-status').dataset.error='true';}
- finally{if(version===importVersion)$('rain-file').value='';}
+ finally{if(version===importVersion){readingImportVersion=null;$('rain-file').value='';refreshExitWarning();}}
 });
 update();

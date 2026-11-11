@@ -59,3 +59,26 @@ Independent review found no blocking findings. Two separately authored regressio
 Local verification passed: 21 model/parser tests, 19 review/UI tests, syntax, static build and all 29 Chromium browser tests under the /rainreserve/ prefix. New 1440 px and 360 px flows cover dry-day carried storage, rainy-day overflow, residual garden target, pending/invalid inputs, imported dates, rejected replacement, keyboard selection, zero scenario capacity and repeated reset/cancel. Reduced motion, no horizontal document overflow and automated axe checks pass. Both new screenshots were visually inspected. The complete suite also covers real CSV downloads and original keyboard, import, responsive and runtime/network checks.
 
 Local runs used the installed Playwright Chromium with a loopback-only test server. Public deployment still requires exact-commit CI, deployment provenance and public-host browser verification. Passing automated checks does not establish physical-device, screen-reader or cross-browser compatibility, user-study results, measured savings, or rainfall accuracy.
+
+## 2026-11-11: refreshed private session protection candidate
+
+The initial source-only checkpoint preserved the current main's SVG action and its regressions, documentation and workflow. It integrated the previously reviewed best-effort beforeunload protection and reusable number formatter. The warning is not recovery or persistence: downloads remain reports, not restorable sessions. At that initial checkpoint there was no model, parser, CSV format, dependency, workflow or deployment change. The later infrastructure recovery is described below.
+
+Local source checks passed 21 model/parser tests, 31 review groups, syntax and build using Node 24.22.1 and already-installed jsdom 30.1.1, rather than pinned 27.4.0. This is qualified source evidence, not a locked dependency or browser pass.
+
+The browser suite adds desktop/360px native Cancel and Leave checks with bounded required-dialog observation. Seven repeated canceled reloads retain edits/imports; explicit apply/default reset and accepted reload are distinguished. Actual saved comparison bytes are checked against separately assembled canonical CSV using the synchronous model. A 366-day leap-year case checks all chart labels across six keyboard slider settings, day 366 keyboard navigation, exact saved bytes before/after canceled leave, and reset after accepted reload. Structured decisions, chart observations and raw downloaded files are retained in test-results. These are synthetic model-parity checks, not independent hydrology or real-world evidence.
+
+Local browser execution was not performed. Exact-commit hosted tests, artifact and visual review, and production verification remain separate; this draft checkpoint does not claim any of them passed.
+
+
+### Hosted installation interruption and candidate recovery
+
+Initial draft run [43062962414](https://github.com/sharonbasovich/rainreserve/actions/runs/43062962414) passed pinned npm installation, 21 model/parser tests, 31 review groups, syntax and build. It ended cancelled after about 12 minutes during Ubuntu package-index retrieval for the browser/system dependency installation. Browser tests were skipped and no browser artifacts were produced; this was not a browser-test failure or pass. The observed log does not establish a DNS failure.
+
+The candidate verification and production-browser jobs now use the official `mcr.microsoft.com/playwright:v1.64.1-noble` image, matching the pinned Playwright package, with explicit Bash. The image supplies browsers and system dependencies; `npm ci` remains required and unchanged. Only the redundant browser/system install commands are removed. Test commands, dependency lock, timeouts, permissions, checkout settings, artifact retention and deployment conditions remain unchanged. This source change is not evidence of successful image retrieval, browser execution or production verification. The image is version-tagged, not digest-pinned.
+
+### Native cancellation harness correction
+
+The first container-backed run reached all 34 browser cases: 30 existing cases passed and four new cases stopped at their first canceled reload. Their traces record a real beforeunload dialog and completed dismissal, followed by the harness waiting for a new document load that a successful cancellation correctly prevents. The reload helper now queues a genuine browser location reload without a load promise for Cancel. Cancel requires the native dialog, completed dismissal, the original unique document marker and URL after a later document task, and zero main-frame navigation commits. Leave requires the native dialog, completed acceptance, exactly one main-frame navigation, a loaded new document and loss of the original marker. No generic timeout is accepted as success.
+
+Thirteen isolated fake-Page protocol controls cover valid Cancel/Leave and rejection of missing/wrong dialogs, failed dismissal/acceptance, unexpected navigation/document replacement, absent accepted navigation, a retained old document and unrelated trigger/evaluation/load failures. These controls test the harness only; they do not count as browser acceptance. Runtime and all product assertions remain unchanged. Exact-source browser rerun and artifact review are still required.
